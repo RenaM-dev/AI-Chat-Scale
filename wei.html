@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>홍등성채 비사: 인터랙티브 리포트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: 폄 Neutral Noir (차분한 느와르) -->
+    <!-- Application Structure Plan: 팟캐스트 스크립트의 선형적 내러티브를 재구성하여 사용자 중심의 탐색형 SPA로 설계. 구조: [1] 헤더 (빠른 탐색), [2] 소개 (앱의 목적 설명), [3] 주요 인물 (클릭 가능한 웨이/티엔 프로필 카드), [4] 인터랙티브 타임라인 (핵심 3막 - 24년/17년/10년 전 - 을 탭으로 분리하여 탐색), [5] 핵심 분석 (Chart.js 레이더 차트를 사용해 인물 속성 시각화), [6] 결론 (현재 상태 요약). 이 구조는 사용자가 '누가', '언제', '무엇을' 했는지 비선형적으로 쉽게 파악하고, 내러티브의 인과관계를 이해하도록 돕기 위해 선택됨. -->
+    <!-- Visualization & Content Choices: [1] 인물 정보 -> 목표: 소개 -> 방식: 클릭형 카드 (HTML/Tailwind/JS) -> 상호작용: 클릭 시 상세 정보 토글 -> 정당성: 스크롤 없이 핵심 정보 제공. [2] 3개의 핵심 사건(비극, 찬탈, 해방) -> 목표: 시간순서 이해 -> 방식: 탭 기반 콘텐츠 블록 (HTML/JS) -> 상호작용: 탭 클릭 시 해당 시대의 요약 표시 -> 정당성: 긴 스크립트를 소화하기 쉬운 단위로 분할. [3] 인물 성향 비교 (웨이/티엔/선대) -> 목표: 인물 심층 분석 -> 방식: 레이더 차트 (Chart.js / Canvas) -> 상호작용: 툴팁 (hover) -> 정당성: 팟캐스트의 정성적 분석(잔인성, 이성, 권력욕 등)을 시각적으로 비교, 필수 라이브러리 요건 충족. [4] 권력 이양 -> 목표: 관계 변화 표시 -> 방식: 간단한 계층도 (HTML/Tailwind) -> 상호작용: 없음 -> 정당성: SVG 없이 명확한 계층 구조 전달. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 40vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+                max-height: 500px;
+            }
+        }
+        .tab-button.active {
+            background-color: #991b1b; 
+            color: #ffffff;
+            border-color: #991b1b;
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-neutral-100 text-neutral-900">
+
+    <header class="sticky top-0 bg-neutral-100/90 backdrop-blur-md shadow-sm z-50">
+        <nav class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0 flex items-center">
+                    <h1 class="text-xl font-bold text-red-800">홍등성채 비사</h1>
+                </div>
+                <div class="hidden sm:block sm:ml-6">
+                    <div class="flex space-x-4">
+                        <a href="#intro" class="nav-link text-neutral-700 hover:text-red-700 px-3 py-2 rounded-md text-sm font-medium">소개</a>
+                        <a href="#characters" class="nav-link text-neutral-700 hover:text-red-700 px-3 py-2 rounded-md text-sm font-medium">주요 인물</a>
+                        <a href="#timeline" class="nav-link text-neutral-700 hover:text-red-700 px-3 py-2 rounded-md text-sm font-medium">타임라인</a>
+                        <a href="#analysis" class="nav-link text-neutral-700 hover:text-red-700 px-3 py-2 rounded-md text-sm font-medium">핵심 분석</a>
+                        <a href="#legacy" class="nav-link text-neutral-700 hover:text-red-700 px-3 py-2 rounded-md text-sm font-medium">현재</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 sm:p-8 space-y-16">
+
+        <section id="intro" class="scroll-mt-20">
+            <div class="text-center bg-white p-8 rounded-lg shadow-lg">
+                <h2 class="text-3xl font-bold text-red-800 mb-4">옥좌의 무게: 인터랙티브 리포트</h2>
+                <p class="text-lg text-neutral-700 max-w-3xl mx-auto">
+                    '시타델 느와르' 팟캐스트는 홍등성채의 어두운 이면을 파헤칩니다. 본 리포트는 팟캐스트의 핵심 서사인 '홍등성채 비사'를 재구성하여, 만월단 옥좌의 주인이 어떻게 바뀌었는지, 그리고 그 중심에 선 두 인물, '웨이'와 '티엔'의 핏빛 운명을 탐색할 수 있도록 설계되었습니다.
+                </p>
+            </div>
+        </section>
+
+        <section id="characters" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-2">주요 인물</h2>
+            <p class="text-md text-neutral-600 text-center mb-8 max-w-2xl mx-auto">
+                이 비극의 중심에는 두 명의 이복형제가 있습니다. 그들의 관계와 선택이 홍등성채의 현재를 만들었습니다. 각 인물 카드를 클릭하여 그들의 숨겨진 이야기를 확인하세요.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                <div class="bg-white rounded-lg shadow-xl overflow-hidden">
+                    <div class="p-6">
+                        <h3 class="text-2xl font-bold text-neutral-800">웨이 (魏)</h3>
+                        <p class="text-lg text-red-700 font-medium mb-4">"정육점 주인" / 前 만월단 보스</p>
+                        <blockquote class="border-l-4 border-neutral-300 pl-4 text-neutral-600 italic mb-4">
+                            "나는... 쉴란다. 시끄러운 건 딱 질색이야."
+                        </blockquote>
+                        <p class="text-neutral-700 mb-4">
+                            선대 보스의 장남이자 전대 만월단 보스. 아버지를 '괴물'로 규정하고 7년간의 계획 끝에 찬탈에 성공합니다. 그러나 자신이 혐오하던 아버지의 망령을 옥좌에서 발견하고, 모든 것을 동생 티엔에게 넘기고 스스로 물러납니다.
+                        </p>
+                        <button class="character-toggle w-full text-left px-4 py-2 bg-neutral-100 hover:bg-neutral-200 rounded-md font-semibold text-neutral-700 transition-all duration-300" data-target="details-wei">
+                            상세 정보 보기
+                        </button>
+                        <div id="details-wei" class="mt-4 border-t border-neutral-200 pt-4 hidden">
+                            <p class="text-sm text-neutral-600"><span class="font-bold">25세:</span> 이복동생 티엔의 비극을 목도하고 아버지를 죽이기로 결심.</p>
+                            <p class="text-sm text-neutral-600"><span class="font-bold">32세:</span> 7년간의 계획 끝에 아버지를 살해하고 만월단의 보스가 됨.</p>
+                            <p class="text-sm text-neutral-600"><span class="font-bold">39세:</span> 7년간의 통치 후, '질서'를 세우는 임무가 끝났음을 느끼고 동생 티엔에게 모든 것을 넘김.</p>
+                            <p class="text-sm text-neutral-600"><span class="font-bold">현재:</span> 상업구역 정육점 주인. 만월단조차 건드리지 못하는 존재.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-xl overflow-hidden">
+                    <div class="p-6">
+                        <h3 class="text-2xl font-bold text-neutral-800">티엔 (蒂恩)</h3>
+                        <p class="text-lg text-red-700 font-medium mb-4">現 만월단 보스 / "작은 유령"</p>
+                        <blockquote class="border-l-4 border-neutral-300 pl-4 text-neutral-600 italic mb-4">
+                            "저는... 당신의 칼입니다. 주인이 없으면 칼은 녹슬 뿐입니다."
+                        </blockquote>
+                        <p class="text-neutral-700 mb-4">
+                            선대 보스의 서자. 14세에 유일한 희망이었던 어머니에게 배신당하고, 그 어머니를 직접 죽인 후 모든 감정을 잃었습니다. 이복형 웨이의 '칼'이자 '그림자'로 살았으며, 현재는 웨이의 명령에 따라 만월단의 옥좌를 지키고 있습니다.
+                        </p>
+                        <button class="character-toggle w-full text-left px-4 py-2 bg-neutral-100 hover:bg-neutral-200 rounded-md font-semibold text-neutral-700 transition-all duration-300" data-target="details-tian">
+                            상세 정보 보기
+                        </button>
+                        <div id="details-tian" class="mt-4 border-t border-neutral-200 pt-4 hidden">
+                            <p class="text-sm text-neutral-600"><span class="font-bold">14세:</span> 탈출 시도 중 어머니의 배신으로 등을 찔리고, 자신의 손으로 어머니를 살해. 모든 감정을 상실.</p>
+                            <p class="text-sm text-neutral-600"><span class="font-bold">21세:</span> 웨이의 찬탈을 돕는 가장 날카로운 '칼' 역할을 수행.</p>
+                            <p class="text-sm text-neutral-600"><span class="font-bold">28세:</span> 웨이의 일방적인 '명령'으로 만월단의 보스 자리를 계승받음.</p>
+                            <p class="text-sm text-neutral-600"><span class="font-bold">현재:</span> 감정 없는 얼굴로 홍등성채의 '질서'를 통치하는 냉혹한 지배자.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="timeline" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-2">인터랙티브 타임라인</h2>
+            <p class="text-md text-neutral-600 text-center mb-8 max-w-2xl mx-auto">
+                옥좌의 주인이 바뀐 세 번의 결정적 순간입니다. 팟캐스트의 서사를 시간대별로 재구성했습니다. 탭을 클릭하여 각 시대의 핵심 사건을 확인하세요.
+            </p>
+            
+            <div class="flex justify-center space-x-2 sm:space-x-4 mb-6">
+                <button class="tab-button active w-1/3 sm:w-auto text-sm sm:text-base font-medium px-4 py-3 border-b-4 rounded-t-lg" data-tab="tab-1">제1막: 24년 전</button>
+                <button class="tab-button w-1/3 sm:w-auto text-sm sm:text-base font-medium px-4 py-3 border-b-4 border-neutral-300 text-neutral-500 hover:border-red-700 hover:text-red-700" data-tab="tab-2">제2막: 17년 전</button>
+                <button class="tab-button w-1/3 sm:w-auto text-sm sm:text-base font-medium px-4 py-3 border-b-4 border-neutral-300 text-neutral-500 hover:border-red-700 hover:text-red-700" data-tab="tab-3">제3막: 10년 전</button>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-xl p-6 sm:p-8 min-h-[300px]">
+                
+                <article id="tab-1" class="tab-content">
+                    <h3 class="text-2xl font-bold text-red-800 mb-4">제1막: 상흔 (24년 전)</h3>
+                    <p class="text-lg text-neutral-700 mb-6">
+                        14세의 티엔이 겪은 비극적 사건이자, 25세의 웨이가 '찬탈'을 결심하게 된 계기입니다. 모든 비극의 씨앗이 심어진 시기입니다.
+                    </p>
+                    <blockquote class="border-l-4 border-red-700 bg-red-50 p-4 rounded-r-lg mb-4">
+                        <p class="text-lg font-medium text-red-900">"다 너 때문이야. 네가 태어나지 않았더라면...!"</p>
+                        <footer class="text-sm text-red-700 mt-2">— 14세 티엔의 어머니, 아들의 등을 찌르며</footer>
+                    </blockquote>
+                    <ul class="list-disc list-inside space-y-2 text-neutral-700">
+                        <li>14세의 티엔, 어머니와 함께 성채 탈출 감행.</li>
+                        <li>탈출 직전, 어머니의 정신이 무너져 티엔의 등을 칼로 찌름.</li>
+                        <li>티엔, 배신감에 휩싸여 자신의 손으로 어머니를 살해하고 모든 감정을 잃음.</li>
+                        <li>25세의 웨이, 피투성이가 된 동생을 발견하고 모든 비극의 근원인 아버지를 죽이기로 결심.</li>
+                    </ul>
+                </article>
+                
+                <article id="tab-2" class="tab-content hidden">
+                    <h3 class="text-2xl font-bold text-red-800 mb-4">제2막: 찬탈 (17년 전)</h3>
+                    <p class="text-lg text-neutral-700 mb-6">
+                        웨이가 7년간의 계획을 실행에 옮긴 날입니다. 선대 보스가 제거되고 옥좌의 주인이 처음으로 바뀌는, 피의 연회가 벌어진 밤입니다.
+                    </p>
+                    <blockquote class="border-l-4 border-red-700 bg-red-50 p-4 rounded-r-lg mb-4">
+                        <p class="text-lg font-medium text-red-900">"당신은... 왕이 아니라 폭군이었소."</p>
+                        <footer class="text-sm text-red-700 mt-2">— 32세의 웨이, 아버지의 심장에 단도를 박아 넣으며</footer>
+                    </blockquote>
+                    <ul class="list-disc list-inside space-y-2 text-neutral-700">
+                        <li>선대 보스의 생일 연회, 32세의 웨이가 7년간의 계획을 실행.</li>
+                        <li>21세의 티엔이 '작은 유령'이 되어 형의 칼이자 그림자로서 숙청을 도움.</li>
+                        <li>웨이, 아버지를 직접 살해하고 만월단의 새로운 보스로 즉위.</li>
+                        <li>티엔, 피범벅이 된 형에게 "이제... 형이 보스입니다."라고 말함.</li>
+                    </ul>
+                </article>
+                
+                <article id="tab-3" class="tab-content hidden">
+                    <h3 class="text-2xl font-bold text-red-800 mb-4">제3막: 해방 (10년 전)</h3>
+                    <p class="text-lg text-neutral-700 mb-6">
+                        웨이가 7년간의 통치 끝에 스스로 옥좌에서 내려온 날입니다. 그가 원했던 것은 권력이 아닌 '해방'이었으며, 이로 인해 티엔의 고독한 시대가 시작됩니다.
+                    </p>
+                    <blockquote class="border-l-4 border-red-700 bg-red-50 p-4 rounded-r-lg mb-4">
+                        <p class="text-lg font-medium text-red-900">"오늘부로, 이 자리는 네 것이다. ...누구도 믿지 마라. 나조차도."</p>
+                        <footer class="text-sm text-red-700 mt-2">— 39세의 웨이, 28세의 티엔에게 옥좌를 넘기며</footer>
+                    </blockquote>
+                    <ul class="list-disc list-inside space-y-2 text-neutral-700">
+                        <li>보스가 된 지 7년째 되던 해, 39세의 웨이는 옥좌에서 아버지의 망령을 보며 지쳐감.</li>
+                        <li>웨이, '질서'를 세우는 임무가 끝났다고 판단하고 티엔에게 보스 자리를 넘기기로 결심.</li>
+                        <li>티엔, "싫습니다. 저는 당신의 칼입니다."라며 처음으로 거역하지만, 웨이는 그를 억지로 옥좌에 앉힘.</li>
+                        <li>웨이는 모든 것을 버리고 '정육점 주인'이 되기 위해 떠나고, 티엔은 홀로 옥좌의 무게를 짊어지게 됨.</li>
+                    </ul>
+                </article>
+            </div>
+        </section>
+        
+        <section id="analysis" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-2">핵심 분석</h2>
+            <p class="text-md text-neutral-600 text-center mb-8 max-w-2xl mx-auto">
+                이 비극은 세 인물의 성향과 그들의 관계 변화에 기인합니다. 팟캐스트의 서술을 바탕으로 핵심 인물들의 성향을 시각화하고, 권력 구조의 변화를 도식화했습니다.
+            </p>
+            
+            <div class="bg-white rounded-lg shadow-xl p-6 sm:p-8">
+                <h3 class="text-2xl font-bold text-neutral-800 mb-6 text-center">인물 성향 분석 (레이더 차트)</h3>
+                <p class="text-neutral-700 text-center mb-6">
+                    세 인물의 주요 성향을 팟캐스트의 묘사를 기반으로 10점 만점으로 분석했습니다. 이는 옥좌의 주인이 바뀔 수밖에 없었던 이유를 보여줍니다.
+                </p>
+                <div class="chart-container">
+                    <canvas id="characterRadarChart"></canvas>
+                </div>
+                
+                <h3 class="text-2xl font-bold text-neutral-800 mb-6 mt-16 text-center">권력 구조의 변화</h3>
+                <p class="text-neutral-700 text-center mb-8">
+                    팟캐스트의 서사에 따른 만월단의 권력 계층 변화입니다.
+                </p>
+                <div class="flex flex-col items-center space-y-4 text-center">
+                    <div class="w-full max-w-sm p-4 bg-neutral-800 text-white rounded-lg shadow-md">
+                        <h4 class="text-xl font-bold">선대 보스 (아버지)</h4>
+                        <p class="text-sm text-neutral-300">"광기와 폭력의 통치"</p>
+                    </div>
+                    <span class="text-3xl font-bold text-red-700">▼</span>
+                    <div class="w-full max-w-sm p-4 bg-white border-2 border-red-700 text-red-800 rounded-lg shadow-md">
+                        <h4 class="text-xl font-bold">웨이 (장남)</h4>
+                        <p class="text-sm font-medium">"이성과 질서의 통치 (7년)"</p>
+                    </div>
+                    <span class="text-3xl font-bold text-red-700">▼</span>
+                    <div class="w-full max-w-sm p-4 bg-neutral-900 text-white rounded-lg shadow-md">
+                        <h4 class="text-xl font-bold">티엔 (서자)</h4>
+                        <p class="text-sm text-neutral-300">"냉혹한 질서의 집행 (10년~)"</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="legacy" class="scroll-mt-20">
+            <div class="text-center bg-neutral-800 text-neutral-100 p-8 rounded-lg shadow-lg">
+                <h2 class="text-3xl font-bold text-white mb-4">현재, 그리고 당신</h2>
+                <p class="text-lg text-neutral-300 max-w-3xl mx-auto">
+                    여러분이 지금 홍등성채에서 마주하는 두 사람, 만월단의 냉혹한 지배자 티엔과, 그 무엇에도 얽매이지 않는 듯한 정육점 주인 웨이. 그들의 과거는 이렇게, 서로의 피와 운명으로 깊게 묶여 있습니다.
+                    <br><br>
+                    <span class="font-bold text-white">그리고 어쩌면... '당신'이라는 새로운 변수가, 이 10년간 멈춰있던 두 사람의 시간을 다시 움직이게 할지도 모르겠군요.</span>
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center p-6 text-neutral-500 text-sm">
+        이 리포트는 '홍등성채 비사' 팟캐스트 대본을 기반으로 생성된 인터랙티브 웹페이지입니다.
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
+            Chart.defaults.font.weight = '500';
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = e.currentTarget.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            const characterToggles = document.querySelectorAll('.character-toggle');
+            characterToggles.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.getAttribute('data-target');
+                    const targetDetails = document.getElementById(targetId);
+                    const isHidden = targetDetails.classList.contains('hidden');
+                    
+                    if (isHidden) {
+                        targetDetails.classList.remove('hidden');
+                        button.innerHTML = '간략히 보기';
+                    } else {
+                        targetDetails.classList.add('hidden');
+                        button.innerHTML = '상세 정보 보기';
+                    }
+                });
+            });
+
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.getAttribute('data-tab');
+
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('active', 'bg-red-800', 'text-white');
+                        btn.classList.add('border-neutral-300', 'text-neutral-500');
+                    });
+                    
+                    button.classList.add('active', 'bg-red-800', 'text-white');
+                    button.classList.remove('border-neutral-300', 'text-neutral-500');
+
+                    tabContents.forEach(content => {
+                        if (content.id === targetTab) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            const ctx = document.getElementById('characterRadarChart').getContext('2d');
+            const characterRadarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['권력욕', '이성', '감정적', '잔혹성', '책임감(의무)'],
+                    datasets: [
+                        {
+                            label: '선대 보스 (폭군)',
+                            data: [9, 2, 8, 10, 1],
+                            backgroundColor: 'rgba(127, 29, 29, 0.2)',
+                            borderColor: 'rgba(127, 29, 29, 1)',
+                            pointBackgroundColor: 'rgba(127, 29, 29, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(127, 29, 29, 1)',
+                            borderWidth: 2
+                        },
+                        {
+                            label: '웨이 (보스 시절)',
+                            data: [4, 8, 5, 6, 9],
+                            backgroundColor: 'rgba(29, 78, 216, 0.2)',
+                            borderColor: 'rgba(29, 78, 216, 1)',
+                            pointBackgroundColor: 'rgba(29, 78, 216, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(29, 78, 216, 1)',
+                            borderWidth: 2
+                        },
+                        {
+                            label: '티엔 (現 보스)',
+                            data: [5, 10, 1, 8, 7],
+                            backgroundColor: 'rgba(55, 65, 81, 0.2)',
+                            borderColor: 'rgba(55, 65, 81, 1)',
+                            pointBackgroundColor: 'rgba(55, 65, 81, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(55, 65, 81, 1)',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 14,
+                                    weight: '500'
+                                },
+                                color: '#333'
+                            },
+                            ticks: {
+                                beginAtZero: true,
+                                max: 10,
+                                stepSize: 2,
+                                backdropColor: 'rgba(255, 255, 255, 0.75)',
+                                color: '#555'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.r !== null) {
+                                        label += context.parsed.r + '점';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
